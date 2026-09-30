@@ -308,6 +308,19 @@
       font-size: 12px;
     }
 
+    .delete-dialog {
+      width: min(360px, calc(100% - 32px));
+      border: 1px solid #d0d0d0;
+      padding: 18px;
+      color: var(--ink);
+      box-shadow: var(--shadow);
+    }
+
+    .delete-dialog::backdrop { background: rgba(0,0,0,0.4); }
+    .delete-dialog form { display: grid; gap: 12px; }
+    .delete-dialog h2 { margin: 0; font-size: 18px; }
+    .delete-dialog-actions { display: flex; justify-content: flex-end; gap: 8px; }
+
 
     @media (max-width: 1080px) {
       .workspace { grid-template-columns: 1fr; }
@@ -422,6 +435,20 @@
     </div>
   </div>
 
+  <dialog id="deleteAuthDialog" class="delete-dialog">
+    <form method="dialog">
+      <h2>일정 삭제</h2>
+      <div class="form-row">
+        <label for="deleteAuthInput">일정 삭제 비밀번호</label>
+        <input type="password" id="deleteAuthInput" autocomplete="new-password" required />
+      </div>
+      <div class="delete-dialog-actions">
+        <button value="cancel" formnovalidate>취소</button>
+        <button class="primary" value="confirm">삭제</button>
+      </div>
+    </form>
+  </dialog>
+
   <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script>
@@ -444,6 +471,19 @@
     const ownerInput = document.getElementById("owner");
     const deleteCodeInput = document.getElementById("deleteCode");
     const allDayInput = document.getElementById("allDay");
+    const deleteAuthDialog = document.getElementById("deleteAuthDialog");
+    const deleteAuthInput = document.getElementById("deleteAuthInput");
+
+    const requestDeleteCode = () => new Promise(resolve => {
+      deleteAuthDialog.addEventListener("close", () => {
+        const value = deleteAuthDialog.returnValue === "confirm" ? deleteAuthInput.value : null;
+        deleteAuthInput.value = "";
+        resolve(value);
+      }, { once: true });
+      deleteAuthInput.value = "";
+      deleteAuthDialog.showModal();
+      deleteAuthInput.focus();
+    });
 
     const timeSlots = [];
     for (let h = 8; h < 21; h++) {
@@ -745,7 +785,7 @@
     };
 
     const deleteEvent = async (id) => {
-      const input = prompt("등록 시 설정한 삭제 비밀번호를 입력하세요.");
+      const input = await requestDeleteCode();
       if (input === null) return;
       const { data, error } = await supabaseClient.rpc("delete_event", {
         p_id: id,
