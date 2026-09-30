@@ -592,7 +592,7 @@
           chip.style.background = colors.bg;
           chip.style.borderColor = colors.border;
           chip.style.color = colors.text;
-          chip.innerHTML = `<strong>${escapeHtml(e.title)}</strong><span>${formatTimeLabel(e.time)} · ${escapeHtml(e.place)}</span>`;
+          chip.innerHTML = `<strong>${escapeHtml(e.title)}</strong><span>${formatTimeLabel(e.time)} · ${escapeHtml(e.place)}</span><span>담당: ${escapeHtml(e.owner)}</span>`;
           dayCell.appendChild(chip);
         });
 
@@ -658,7 +658,7 @@
           const rangeText = event.start === event.end
             ? shortDate(event.start)
             : `${shortDate(event.start)} ~ ${shortDate(event.end)}`;
-          li.innerHTML = `${rangeText} ${escapeHtml(event.title)} · ${formatTimeLabel(event.time)} · ${escapeHtml(event.place)}`;
+          li.innerHTML = `${rangeText} ${escapeHtml(event.title)} · ${formatTimeLabel(event.time)} · ${escapeHtml(event.place)} · 담당 ${escapeHtml(event.owner)}`;
           summaryListEl.appendChild(li);
         });
 
