@@ -400,7 +400,9 @@
               <option value="소교육장 B">소교육장 B</option>
               <option value="대강당">대강당</option>
               <option value="원형강의실">원형강의실</option>
+              <option value="__custom__">직접 입력</option>
             </select>
+            <input type="text" id="customPlace" placeholder="예: 별관 강의실" aria-label="직접 입력한 장소" hidden />
           </div>
           <div class="form-row">
             <label>담당자</label>
@@ -438,6 +440,7 @@
     const titleInput = document.getElementById("title");
     const timeSlotInput = document.getElementById("timeSlot");
     const placeInput = document.getElementById("place");
+    const customPlaceInput = document.getElementById("customPlace");
     const ownerInput = document.getElementById("owner");
     const deleteCodeInput = document.getElementById("deleteCode");
     const allDayInput = document.getElementById("allDay");
@@ -492,6 +495,12 @@
 
     allDayInput.addEventListener("change", () => {
       setAllDay(allDayInput.checked);
+    });
+
+    placeInput.addEventListener("change", () => {
+      const useCustomPlace = placeInput.value === "__custom__";
+      customPlaceInput.hidden = !useCustomPlace;
+      if (useCustomPlace) customPlaceInput.focus();
     });
 
     let current = new Date();
@@ -681,12 +690,14 @@
       const endValue = endInput.value || startValue;
       const title = titleInput.value.trim();
       const time = Array.from(timeSlotInput.querySelectorAll("input[type='checkbox']:checked")).map(input => input.value);
-      const place = placeInput.value;
+      const place = placeInput.value === "__custom__"
+        ? customPlaceInput.value.trim()
+        : placeInput.value;
       const owner = ownerInput.value.trim();
       const deleteCode = deleteCodeInput.value.trim();
 
-      if (!startValue || !title || !owner || time.length === 0 || !deleteCode) {
-        alert("시작 날짜, 내용, 담당자, 시간, 삭제 비밀번호는 필수입니다.");
+      if (!startValue || !title || !owner || !place || time.length === 0 || !deleteCode) {
+        alert("시작 날짜, 내용, 담당자, 장소, 시간, 삭제 비밀번호는 필수입니다.");
         return;
       }
 
@@ -719,6 +730,9 @@
       }
 
       titleInput.value = "";
+      placeInput.selectedIndex = 0;
+      customPlaceInput.value = "";
+      customPlaceInput.hidden = true;
       ownerInput.value = "";
       deleteCodeInput.value = "";
       endInput.value = "";
