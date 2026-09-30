@@ -1,0 +1,792 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>교육장사용일정표</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&family=Noto+Serif+KR:wght@700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --ink: #1b1b1b;
+      --muted: #6a6a6a;
+      --line: #6a6a6a;
+      --sheet: #ffffff;
+      --bg: #f2f2f2;
+      --accent: #f25f5c;
+      --shadow: 0 12px 30px rgba(0,0,0,0.1);
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      font-family: "Noto Sans KR", "Apple SD Gothic Neo", sans-serif;
+      color: var(--ink);
+      background: var(--bg);
+      min-height: 100vh;
+      padding: 24px 16px 40px;
+    }
+
+    .page {
+      width: min(1280px, 100%);
+      margin: 0 auto;
+      display: grid;
+      gap: 16px;
+    }
+
+    .toolbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    .toolbar-group {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    button {
+      border: 1px solid #d0d0d0;
+      background: #fff;
+      color: var(--ink);
+      padding: 9px 14px;
+      border-radius: 8px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: transform 0.12s ease, box-shadow 0.12s ease;
+    }
+
+    button:hover { transform: translateY(-1px); box-shadow: var(--shadow); }
+
+    button.primary {
+      background: var(--accent);
+      color: #fff;
+      border-color: transparent;
+    }
+
+    .workspace {
+      display: grid;
+      grid-template-columns: 1.15fr 0.85fr;
+      gap: 16px;
+      align-items: start;
+    }
+
+    .sheet {
+      background: var(--sheet);
+      border: 2px solid #4b4b4b;
+      padding: 18px 18px 14px;
+      box-shadow: var(--shadow);
+    }
+
+    body.exporting .sheet {
+      width: 794px;
+      margin: 0 auto;
+    }
+
+    body.exporting .sheet-title h1 { font-size: 30px; }
+    body.exporting .day { min-height: 90px; }
+    body.exporting .note-block { min-height: 110px; }
+
+    .sheet-title {
+      text-align: center;
+      margin-bottom: 12px;
+    }
+
+    .sheet-title h1 {
+      font-family: "Noto Serif KR", serif;
+      font-size: 36px;
+      margin: 0;
+      letter-spacing: 0.04em;
+    }
+
+    .sheet-sub {
+      font-size: 14px;
+      color: var(--muted);
+      margin-top: 4px;
+    }
+
+    .weekday-row {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      border: 2px solid #4b4b4b;
+      border-bottom: 0;
+    }
+
+    .weekday {
+      text-align: center;
+      padding: 8px 0;
+      font-weight: 700;
+      border-right: 1px solid #4b4b4b;
+      background: #fafafa;
+    }
+
+    .weekday:last-child { border-right: 0; }
+    .weekday.sun { color: #e53935; }
+    .weekday.sat { color: #2563eb; }
+
+    .calendar {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      border: 2px solid #4b4b4b;
+    }
+
+    .day {
+      min-height: 110px;
+      border-right: 1px solid #4b4b4b;
+      border-bottom: 1px solid #4b4b4b;
+      padding: 6px;
+      display: grid;
+      gap: 4px;
+      align-content: start;
+      position: relative;
+    }
+
+    .day:nth-child(7n) { border-right: 0; }
+
+    .day.muted {
+      background: #f6f6f6;
+      color: #9a9a9a;
+    }
+
+    .day-number {
+      font-weight: 700;
+      font-size: 12px;
+    }
+
+    .day-number.sun { color: #e53935; }
+    .day-number.sat { color: #2563eb; }
+
+    .event-tag {
+      padding: 4px 6px;
+      border-radius: 6px;
+      font-size: 11px;
+      border: 1px solid #999;
+      line-height: 1.2;
+      word-break: keep-all;
+      text-align: center;
+      background: #ffffff;
+    }
+
+    .event-tag strong { display: block; font-weight: 700; }
+    .event-tag span { display: block; font-size: 10px; }
+
+    .sheet-notes {
+      margin-top: 16px;
+      display: block;
+    }
+
+    .note-block {
+      border: 1px solid #c9c9c9;
+      padding: 10px 12px;
+      min-height: 140px;
+    }
+
+    .note-block h3 {
+      margin: 0 0 6px;
+      font-size: 14px;
+    }
+
+    .note-block ul {
+      margin: 0;
+      padding-left: 16px;
+      font-size: 12px;
+      color: var(--muted);
+      display: grid;
+      gap: 4px;
+    }
+
+    .sheet-footer {
+      margin-top: 14px;
+      border-top: 1px solid #c9c9c9;
+      padding-top: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-weight: 700;
+    }
+
+    .form-panel {
+      background: #fff;
+      border: 1px solid #d8d8d8;
+      border-radius: 12px;
+      padding: 16px;
+      display: grid;
+      gap: 12px;
+      box-shadow: var(--shadow);
+    }
+
+    .form-panel h2 {
+      margin: 0;
+      font-size: 18px;
+    }
+
+    .form-grid {
+      display: grid;
+      gap: 10px;
+    }
+
+    .form-row {
+      display: grid;
+      gap: 6px;
+    }
+
+    label {
+      font-size: 12px;
+      color: var(--muted);
+    }
+
+    input, select {
+      padding: 10px 12px;
+      border-radius: 8px;
+      border: 1px solid #d0d0d0;
+      font-size: 14px;
+      font-family: inherit;
+    }
+
+    .time-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+      gap: 8px;
+      border: 1px solid #d0d0d0;
+      border-radius: 8px;
+      padding: 10px;
+      background: #fafafa;
+    }
+
+    .time-option {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 13px;
+      background: #fff;
+      border: 1px solid #e0e0e0;
+      border-radius: 8px;
+      padding: 6px 8px;
+    }
+
+    .time-option input {
+      width: 16px;
+      height: 16px;
+    }
+
+    .inline-toggle {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .list {
+      max-height: 320px;
+      overflow: auto;
+      display: grid;
+      gap: 8px;
+    }
+
+    .list-item {
+      border: 1px dashed #c9c9c9;
+      padding: 10px 12px;
+      border-radius: 10px;
+      display: grid;
+      gap: 6px;
+      background: #fafafa;
+    }
+
+    .meta {
+      font-size: 12px;
+      color: var(--muted);
+    }
+
+    .list-item button {
+      justify-self: start;
+      padding: 6px 10px;
+      font-size: 12px;
+    }
+
+
+    @media (max-width: 1080px) {
+      .workspace { grid-template-columns: 1fr; }
+    }
+
+    @media print {
+      body { background: #fff; padding: 0; }
+      .toolbar, .form-panel { display: none !important; }
+      .sheet { box-shadow: none; margin: 0; }
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <div class="toolbar">
+      <div class="toolbar-group">
+        <button id="prevMonth">이전 달</button>
+        <button id="todayBtn">이번 달</button>
+        <button id="nextMonth">다음 달</button>
+      </div>
+      <div class="toolbar-group">
+        <button id="printBtn">인쇄/PDF</button>
+        <button class="primary" id="downloadBtn">다운로드(PNG)</button>
+      </div>
+    </div>
+
+    <div class="workspace">
+      <section class="sheet" id="captureArea">
+        <div class="sheet-title">
+          <h1 id="monthLabel">2026년 7월 교육장 사용 일정표</h1>
+          <div class="sheet-sub" id="yearLabel"></div>
+        </div>
+
+        <div class="weekday-row">
+          <div class="weekday sun">일</div>
+          <div class="weekday">월</div>
+          <div class="weekday">화</div>
+          <div class="weekday">수</div>
+          <div class="weekday">목</div>
+          <div class="weekday">금</div>
+          <div class="weekday sat">토</div>
+        </div>
+        <div class="calendar" id="calendar"></div>
+
+        <div class="sheet-notes">
+          <div class="note-block">
+            <h3>일정 요약</h3>
+            <ul id="summaryList"></ul>
+          </div>
+        </div>
+
+        <div class="sheet-footer">
+          <div></div>
+          <div>TEAM SCHEDULE</div>
+        </div>
+      </section>
+
+      <section class="form-panel">
+        <h2>일정 입력</h2>
+        <div class="form-grid">
+          <div class="form-row">
+            <label>시작 날짜</label>
+            <input type="date" id="startDate" />
+          </div>
+          <div class="form-row">
+            <label>종료 날짜 (선택)</label>
+            <input type="date" id="endDate" />
+          </div>
+          <div class="form-row">
+            <label>일정 내용</label>
+            <input type="text" id="title" placeholder="예: 스마트팜 교육" />
+          </div>
+          <div class="form-row">
+            <label>시간 (1시간 단위, 다중 선택)</label>
+            <div class="time-grid" id="timeSlot"></div>
+          </div>
+          <div class="form-row">
+            <label>전일 대관</label>
+            <div class="inline-toggle">
+              <input type="checkbox" id="allDay" />
+              <span class="meta">하루 전체 시간 사용</span>
+            </div>
+          </div>
+          <div class="form-row">
+            <label>장소</label>
+            <select id="place">
+              <option value="세미나실">세미나실</option>
+              <option value="중교육장">중교육장</option>
+              <option value="소교육장 A">소교육장 A</option>
+              <option value="소교육장 B">소교육장 B</option>
+              <option value="대강당">대강당</option>
+              <option value="원형강의실">원형강의실</option>
+            </select>
+          </div>
+          <div class="form-row">
+            <label>담당자</label>
+            <input type="text" id="owner" placeholder="예: 김하늘" />
+          </div>
+          <div class="form-row">
+            <label>삭제 비밀번호</label>
+            <input type="password" id="deleteCode" placeholder="등록 시 설정" />
+          </div>
+          <button class="primary" id="addBtn">일정 추가</button>
+          <div class="meta">기간 일정은 날짜별로 자동 분할되어 셀에 쌓입니다.</div>
+        </div>
+
+        <h2 style="margin-top:10px;">전체 일정</h2>
+        <div class="list" id="eventList"></div>
+      </section>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script>
+    const SUPABASE_URL = "https://zoczkgrrjcabgcztcnus.supabase.co";
+    const SUPABASE_PUBLISHABLE_KEY = "sb_publishable_kQd-I3qy7xI2qLggBb1xeA_pfKIydfm";
+    const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY);
+
+    const calendarEl = document.getElementById("calendar");
+    const monthLabel = document.getElementById("monthLabel");
+    const yearLabel = document.getElementById("yearLabel");
+    const eventListEl = document.getElementById("eventList");
+    const summaryListEl = document.getElementById("summaryList");
+
+    const startInput = document.getElementById("startDate");
+    const endInput = document.getElementById("endDate");
+    const titleInput = document.getElementById("title");
+    const timeSlotInput = document.getElementById("timeSlot");
+    const placeInput = document.getElementById("place");
+    const ownerInput = document.getElementById("owner");
+    const deleteCodeInput = document.getElementById("deleteCode");
+    const allDayInput = document.getElementById("allDay");
+
+    const timeSlots = [];
+    for (let h = 8; h < 21; h++) {
+      const start = String(h).padStart(2, "0") + ":00";
+      const end = String(h + 1).padStart(2, "0") + ":00";
+      timeSlots.push(`${start}~${end}`);
+    }
+
+    const placeColors = {
+      "세미나실": { bg: "#ffe6ef", border: "#f4b4c7", text: "#a61e4d" },
+      "중교육장": { bg: "#e0f2fe", border: "#7dc4f3", text: "#0b5394" },
+      "소교육장 A": { bg: "#e7f8df", border: "#9ed38a", text: "#2f6b16" },
+      "소교육장 B": { bg: "#e6f5e9", border: "#7fc49a", text: "#14532d" },
+      "대강당": { bg: "#fff4d1", border: "#f2c66f", text: "#8a5b00" },
+      "원형강의실": { bg: "#f8e7ff", border: "#d2a8f2", text: "#6a1b9a" }
+    };
+
+    timeSlots.forEach((slot, index) => {
+      const label = document.createElement("label");
+      label.className = "time-option";
+      const input = document.createElement("input");
+      input.type = "checkbox";
+      input.value = slot;
+      input.id = `slot-${index}`;
+      const text = document.createElement("span");
+      text.textContent = slot;
+      label.appendChild(input);
+      label.appendChild(text);
+      timeSlotInput.appendChild(label);
+    });
+
+    const formatTimeLabel = (times) => {
+      if (times.length === timeSlots.length) return "전일";
+      return times.join(", ");
+    };
+
+    const timeOrder = (times) => {
+      if (times.length === timeSlots.length) return -1;
+      const first = timeSlots.indexOf(times[0]);
+      return first === -1 ? 999 : first;
+    };
+
+    const setAllDay = (checked) => {
+      timeSlotInput.querySelectorAll("input[type='checkbox']").forEach(input => {
+        input.checked = checked;
+        input.disabled = checked;
+      });
+    };
+
+    allDayInput.addEventListener("change", () => {
+      setAllDay(allDayInput.checked);
+    });
+
+    let current = new Date();
+    current.setDate(1);
+    let cachedEvents = [];
+
+    const loadEvents = async () => {
+      const { data, error } = await supabaseClient
+        .from("events")
+        .select("id,title,time,place,owner,start,end,days");
+      if (error) throw error;
+      cachedEvents = data || [];
+    };
+
+    const escapeHtml = (value) => String(value).replace(/[&<>"']/g, character => ({
+      "&": "&amp;",
+      "<": "&lt;",
+      ">": "&gt;",
+      "\"": "&quot;",
+      "'": "&#39;"
+    })[character]);
+
+    const formatDate = (d) => {
+      const y = d.getFullYear();
+      const m = String(d.getMonth() + 1).padStart(2, "0");
+      const day = String(d.getDate()).padStart(2, "0");
+      return `${y}-${m}-${day}`;
+    };
+
+    const parseDate = (value) => {
+      const [y, m, d] = value.split("-").map(Number);
+      return new Date(y, m - 1, d);
+    };
+
+    const addDays = (date, n) => {
+      const copy = new Date(date);
+      copy.setDate(copy.getDate() + n);
+      return copy;
+    };
+
+    const weekNames = ["일", "월", "화", "수", "목", "금", "토"];
+
+    const shortDate = (value) => {
+      const d = parseDate(value);
+      return `${d.getMonth() + 1}/${d.getDate()}(${weekNames[d.getDay()]})`;
+    };
+
+    const renderCalendar = () => {
+      const year = current.getFullYear();
+      const month = current.getMonth();
+      monthLabel.textContent = `${year}년 ${month + 1}월 교육장 사용 일정표`;
+      yearLabel.textContent = "";
+
+      const firstDay = new Date(year, month, 1);
+      const startDay = firstDay.getDay();
+      const lastDate = new Date(year, month + 1, 0).getDate();
+      const prevMonthLastDate = new Date(year, month, 0).getDate();
+
+      calendarEl.innerHTML = "";
+      const events = cachedEvents;
+
+      for (let i = 0; i < 42; i++) {
+        const dayCell = document.createElement("div");
+        dayCell.className = "day";
+
+        let dateNumber = i - startDay + 1;
+        let cellDate;
+        if (dateNumber <= 0) {
+          dayCell.classList.add("muted");
+          dateNumber = prevMonthLastDate + dateNumber;
+          cellDate = new Date(year, month - 1, dateNumber);
+        } else if (dateNumber > lastDate) {
+          dayCell.classList.add("muted");
+          dateNumber = dateNumber - lastDate;
+          cellDate = new Date(year, month + 1, dateNumber);
+        } else {
+          cellDate = new Date(year, month, dateNumber);
+        }
+
+        const dayIndex = cellDate.getDay();
+
+        const label = document.createElement("div");
+        label.className = "day-number";
+        if (dayIndex === 0) label.classList.add("sun");
+        if (dayIndex === 6) label.classList.add("sat");
+        label.textContent = dateNumber;
+        dayCell.appendChild(label);
+
+        const dayKey = formatDate(cellDate);
+        const dayEvents = events
+          .filter(e => e.days.includes(dayKey))
+          .sort((a, b) => timeOrder(a.time) - timeOrder(b.time));
+
+        dayEvents.forEach(e => {
+          const chip = document.createElement("div");
+          chip.className = "event-tag";
+          const colors = placeColors[e.place] || { bg: "#ffffff", border: "#999999", text: "#1b1b1b" };
+          chip.style.background = colors.bg;
+          chip.style.borderColor = colors.border;
+          chip.style.color = colors.text;
+          chip.innerHTML = `<strong>${escapeHtml(e.title)}</strong><span>${formatTimeLabel(e.time)} · ${escapeHtml(e.place)}</span>`;
+          dayCell.appendChild(chip);
+        });
+
+        calendarEl.appendChild(dayCell);
+      }
+
+      if (!startInput.value) {
+        const today = new Date();
+        startInput.value = formatDate(today);
+      }
+    };
+
+    const renderList = () => {
+      const events = cachedEvents;
+      eventListEl.innerHTML = "";
+
+      events
+        .sort((a, b) => {
+          const dateSort = a.start.localeCompare(b.start);
+          if (dateSort !== 0) return dateSort;
+          return timeOrder(a.time) - timeOrder(b.time);
+        })
+        .forEach(event => {
+          const item = document.createElement("div");
+          item.className = "list-item";
+          item.innerHTML = `
+            <strong>${escapeHtml(event.title)}</strong>
+            <div class="meta">${event.start} ~ ${event.end} · ${formatTimeLabel(event.time)} · ${escapeHtml(event.place)} · 담당 ${escapeHtml(event.owner)}</div>
+          `;
+          const delBtn = document.createElement("button");
+          delBtn.textContent = "삭제";
+          delBtn.addEventListener("click", () => deleteEvent(event.id));
+          item.appendChild(delBtn);
+          eventListEl.appendChild(item);
+        });
+
+      if (events.length === 0) {
+        const empty = document.createElement("div");
+        empty.className = "meta";
+        empty.textContent = "등록된 일정이 없습니다.";
+        eventListEl.appendChild(empty);
+      }
+    };
+
+    const renderSummary = () => {
+      const events = cachedEvents;
+      summaryListEl.innerHTML = "";
+      if (events.length === 0) {
+        const empty = document.createElement("li");
+        empty.textContent = "등록된 일정이 없습니다.";
+        summaryListEl.appendChild(empty);
+        return;
+      }
+
+      events
+        .sort((a, b) => {
+          const dateSort = a.start.localeCompare(b.start);
+          if (dateSort !== 0) return dateSort;
+          return timeOrder(a.time) - timeOrder(b.time);
+        })
+        .forEach(event => {
+          const li = document.createElement("li");
+          const rangeText = event.start === event.end
+            ? shortDate(event.start)
+            : `${shortDate(event.start)} ~ ${shortDate(event.end)}`;
+          li.innerHTML = `${rangeText} ${escapeHtml(event.title)} · ${formatTimeLabel(event.time)} · ${escapeHtml(event.place)}`;
+          summaryListEl.appendChild(li);
+        });
+
+    };
+
+    const refreshAll = async () => {
+      try {
+        await loadEvents();
+        renderCalendar();
+        renderList();
+        renderSummary();
+      } catch (error) {
+        console.error(error);
+        alert("일정 데이터를 불러오지 못했습니다. Supabase 연결 설정을 확인해 주세요.");
+      }
+    };
+
+    const addEvent = async () => {
+      const startValue = startInput.value;
+      const endValue = endInput.value || startValue;
+      const title = titleInput.value.trim();
+      const time = Array.from(timeSlotInput.querySelectorAll("input[type='checkbox']:checked")).map(input => input.value);
+      const place = placeInput.value;
+      const owner = ownerInput.value.trim();
+      const deleteCode = deleteCodeInput.value.trim();
+
+      if (!startValue || !title || !owner || time.length === 0 || !deleteCode) {
+        alert("시작 날짜, 내용, 담당자, 시간, 삭제 비밀번호는 필수입니다.");
+        return;
+      }
+
+      let start = parseDate(startValue);
+      let end = parseDate(endValue);
+      if (end < start) end = start;
+
+      const days = [];
+      let cursor = new Date(start);
+      while (cursor <= end) {
+        days.push(formatDate(cursor));
+        cursor = addDays(cursor, 1);
+      }
+
+      const { error } = await supabaseClient.rpc("create_event", {
+        p_title: title,
+        p_time: time,
+        p_place: place,
+        p_owner: owner,
+        p_delete_code: deleteCode,
+        p_start: formatDate(start),
+        p_end: formatDate(end),
+        p_days: days
+      });
+      if (error) {
+        alert(error.message.includes("예약 충돌")
+          ? "선택한 날짜/시간에 이미 예약이 있습니다. 다른 시간이나 장소를 선택해 주세요."
+          : "일정 저장에 실패했습니다. Supabase 설정을 확인해 주세요.");
+        return;
+      }
+
+      titleInput.value = "";
+      ownerInput.value = "";
+      deleteCodeInput.value = "";
+      endInput.value = "";
+      allDayInput.checked = false;
+      timeSlotInput.querySelectorAll("input[type='checkbox']").forEach(input => {
+        input.checked = false;
+        input.disabled = false;
+      });
+      await refreshAll();
+    };
+
+    const deleteEvent = async (id) => {
+      const input = prompt("등록 시 설정한 삭제 비밀번호를 입력하세요.");
+      if (input === null) return;
+      const { data, error } = await supabaseClient.rpc("delete_event", {
+        p_id: id,
+        p_delete_code: input
+      });
+      if (error) {
+        console.error(error);
+        alert("일정 삭제에 실패했습니다. Supabase 설정을 확인해 주세요.");
+        return;
+      }
+      if (!data) {
+        alert("비밀번호가 일치하지 않습니다.");
+        return;
+      }
+      await refreshAll();
+    };
+
+    document.getElementById("addBtn").addEventListener("click", addEvent);
+    document.getElementById("prevMonth").addEventListener("click", async () => {
+      current.setMonth(current.getMonth() - 1);
+      await refreshAll();
+    });
+    document.getElementById("nextMonth").addEventListener("click", async () => {
+      current.setMonth(current.getMonth() + 1);
+      await refreshAll();
+    });
+    document.getElementById("todayBtn").addEventListener("click", async () => {
+      current = new Date();
+      current.setDate(1);
+      await refreshAll();
+    });
+
+    document.getElementById("downloadBtn").addEventListener("click", async () => {
+      const capture = document.getElementById("captureArea");
+      document.body.classList.add("exporting");
+      await new Promise(requestAnimationFrame);
+      await new Promise(requestAnimationFrame);
+      try {
+        const canvas = await html2canvas(capture, { scale: 2, backgroundColor: "#ffffff" });
+        const link = document.createElement("a");
+        const year = current.getFullYear();
+        const month = String(current.getMonth() + 1).padStart(2, "0");
+        link.download = `${year}-${month}-education-schedule.png`;
+        link.href = canvas.toDataURL("image/png");
+        link.click();
+      } finally {
+        document.body.classList.remove("exporting");
+      }
+    });
+
+    document.getElementById("printBtn").addEventListener("click", () => {
+      window.print();
+    });
+
+    refreshAll();
+  </script>
+</body>
+</html>
